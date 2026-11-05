@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Solo Leveling System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        oled: '#000000',
+                        glass: 'rgba(10, 15, 25, 0.7)',
+                        system: {
+                            400: '#60a5fa', 
+                            600: '#2563eb',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                            neon: '#00f0ff' // Bright cyan/neon blue
+                        }
+                    },
+                    fontFamily: {
+                        system: ['Orbitron', 'sans-serif'],
+                        mono: ['Rajdhani', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap');
+
+        body {
+            background-color: #000000;
+            color: #e2e8f0;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Glassmorphism Panels */
+        .glass-panel {
+            background: rgba(10, 15, 25, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 240, 255, 0.15);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
+        }
+
+        input { user-select: text; -webkit-user-select: text; }
+
+        /* Neon Glows */
+        .glow-system { box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); }
+        .text-glow-system { text-shadow: 0 0 10px rgba(0, 240, 255, 0.8); }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #00f0ff; border-radius: 2px; }
+
+        /* Draggable Icon */
+        #shadow-icon {
+            touch-action: none;
+            cursor: grab;
+            z-index: 9999;
+        }
+        #shadow-icon:active { cursor: grabbing; }
+
+        .typewriter:after {
+            content: '|';
+            animation: blink 1s step-start infinite;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* Animations */
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
+        
+        @keyframes pulse-system { 0%, 100% { border-color: rgba(0,240,255,0.2); } 50% { border-color: rgba(0,240,255,0.8); box-shadow: 0 0 12px rgba(0,240,255,0.4); } }
+        .border-pulse-system { animation: pulse-system 2s infinite; }
+    </style>
+</head>
+<body class="min-h-screen font-mono relative pb-20 sm:pb-0">
+
+    <!-- Floating Shadow Slave Icon (Creepy System Eye) -->
+    <div id="shadow-icon" class="fixed w-14 h-14 rounded-full bg-oled border-2 border-system-neon glow-system flex items-center justify-center text-system-neon text-2xl transition-transform hover:scale-105" style="bottom: 80px; right: 20px;">
+        <i class="fa-solid fa-eye animate-pulse pointer-events-none"></i>
+    </div>
+
+    <div class="max-w-4xl mx-auto p-4 sm:p-6 min-h-screen flex flex-col relative z-10">
+        
+        <!-- Header -->
+        <header class="flex items-center justify-between pb-4 border-b border-system-900 mb-6">
+            <div>
+                <h1 class="font-system text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-system-400 to-system-neon tracking-wider text-glow-system">
+                    SYSTEM
+                </h1>
+                <p class="text-xs text-system-400 tracking-widest">PLAYER STATUS: <span class="text-system-neon font-bold">AWAKENED</span></p>
+            </div>
+            <div class="glass-panel px-3 py-1 rounded border border-system-600 text-xs text-system-neon">
+                <i class="fa-solid fa-signal mr-1"></i> ONLINE
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="flex space-x-2 mb-6">
+            <button onclick="switchTab('status')" id="nav-status" class="flex-1 py-3 rounded glass-panel font-system font-bold text-system-neon border-system-neon hover:bg-system-900 transition tab-btn active-tab glow-system">
+                <i class="fa-solid fa-user-shield mr-2"></i>STATUS
+            </button>
+            <button onclick="switchTab('quests')" id="nav-quests" class="flex-1 py-3 rounded glass-panel font-system font-bold text-gray-500 border-gray-800 hover:bg-system-900 transition tab-btn">
+                <i class="fa-solid fa-scroll mr-2"></i>QUESTS
+            </button>
+            <button onclick="switchTab('advisor')" id="nav-advisor" class="flex-1 py-3 rounded glass-panel font-system font-bold text-gray-500 border-gray-800 hover:bg-system-900 hover:text-system-neon transition tab-btn">
+                <i class="fa-solid fa-eye mr-2"></i>ADVISOR
+            </button>
+        </nav>
+
+        <!-- Main Content Views -->
+        <main class="flex-grow">
+            
+            <!-- STATUS TAB -->
+            <section id="view-status" class="space-y-6 block animate-fade-in">
+                <div class="glass-panel p-5 rounded-xl border border-system-800 relative overflow-hidden">
+                    <div class="absolute -right-10 -top-10 w-32 h-32 bg-system-600 opacity-10 rounded-full blur-3xl pointer-events-none"></div>
+                    
+                    <div class="flex justify-between items-start mb-6 border-b border-system-900 pb-4">
+                        <div>
+                            <h2 class="font-system text-xl font-bold text-system-neon text-glow-system" id="playerName">PLAYER</h2>
+                            <p class="text-xs text-gray-400">CLASS: <span class="text-system-400 font-bold">SHADOW MONARCH</span></p>
+                        </div>
+                        <div class="text-right">
+                            <h3 class="font-system text-2xl font-black text-white">LV. <span id="ui-level" class="text-system-neon text-glow-system">1</span></h3>
+                            <p class="text-[10px] text-gray-500">EXP: <span id="ui-xp">0</span> / <span id="ui-maxXp">100</span></p>
+                        </div>
+                    </div>
+
+                    <!-- XP Bar -->
+                    <div class="w-full h-1.5 bg-gray-900 rounded-full mb-6 overflow-hidden border border-gray-800">
+                        <div id="ui-xpBar" class="h-full bg-system-neon glow-system transition-all duration-500" style="width: 0%"></div>
+                    </div>
+
+                    <!-- Vitals -->
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-oled p-3 rounded border border-system-800">
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-red-500 font-bold"><i class="fa-solid fa-heart mr-1"></i> HP</span>
+                                <span id="ui-hpText" class="text-gray-300">100/100</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-gray-900 rounded-full overflow-hidden">
+                                <div id="ui-hpBar" class="h-full bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.8)]" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div class="bg-oled p-3 rounded border border-system-800">
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-system-neon font-bold"><i class="fa-solid fa-bolt mr-1"></i> MP</span>
+                                <span id="ui-mpText" class="text-gray-300">50/50</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-gray-900 rounded-full overflow-hidden">
+                                <div id="ui-mpBar" class="h-full bg-system-400 glow-system" style="width: 100%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-system text-sm font-bold text-system-400"><i class="fa-solid fa-chart-simple mr-2"></i>ATTRIBUTES</h3>
+                            <span class="text-[10px] text-gray-500">Attributes adapt via active quests.</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3" id="stats-container">
+                            <!-- Stats injected via JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- QUESTS TAB -->
+            <section id="view-quests" class="space-y-6 hidden animate-fade-in">
+                
+                <!-- Daily Quests -->
+                <div class="glass-panel p-5 rounded-xl border border-system-900">
+                    <h3 class="font-system text-sm font-bold text-system-400 mb-1 flex items-center">
+                        <i class="fa-solid fa-rotate-right mr-2"></i> SYSTEM DAILY ROUTINE
+                    </h3>
+                    <p class="text-[10px] text-gray-500 mb-4">Scales dynamically with Player Level.</p>
+                    <div id="daily-quests-container" class="space-y-3">
+                        <!-- Daily injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Personal Records -->
+                <div class="glass-panel p-5 rounded-xl border border-system-800">
+                    <h3 class="font-system text-sm font-bold text-system-neon mb-1 flex items-center"><i class="fa-solid fa-trophy mr-2"></i> PERSONAL RECORDS</h3>
+                    <p class="text-[10px] text-gray-500 mb-4">Log a result. Beat your best for bonus EXP and a higher next target. Missed days lower daily targets; streaks raise them.</p>
+                    <div id="pr-container" class="space-y-3"></div>
+                </div>
+
+                <!-- Advisor Quests (Dynamic) -->
+                <div class="glass-panel p-5 rounded-xl border border-system-neon border-pulse-system">
+                    <h3 class="font-system text-sm font-bold text-system-neon mb-1 flex items-center text-glow-system">
+                        <i class="fa-solid fa-bullseye mr-2"></i> SHADOW SLAVE DIRECTIVES
+                    </h3>
+                    <p class="text-[10px] text-system-400 mb-4">MANDATED TRIALS EXTRACTED FROM YOUR AMBITIONS.</p>
+                    <div id="advisor-quests-container" class="space-y-3">
+                        <!-- Dynamic quests injected via JS -->
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- ADVISOR TAB -->
+            <section id="view-advisor" class="h-full flex flex-col hidden animate-fade-in">
+                <div class="glass-panel flex-grow rounded-xl border border-system-800 flex flex-col overflow-hidden relative" style="min-height: 60vh;">
+                    
+                    <div class="p-4 border-b border-system-900 flex items-center space-x-3 bg-oled/50">
+                        <div class="w-10 h-10 rounded-full border border-system-neon bg-system-900/30 flex items-center justify-center glow-system">
+                            <i class="fa-solid fa-eye text-system-neon text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-system font-bold text-system-neon text-glow-system">SHADOW SLAVE</h3>
+                            <p id="advisor-sub" class="text-[10px] text-system-400 tracking-widest">TACTICAL ADVISOR ENTITY</p>
+                        </div>
+                    </div>
+
+                    <!-- Chat History -->
+                    <div id="chat-container" class="flex-grow p-4 overflow-y-auto space-y-4">
+                        <!-- Initial Greeting handled in JS -->
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="p-4 border-t border-system-900 bg-oled/80">
+                        <form id="goal-form" class="flex space-x-2">
+                            <input type="text" id="goal-input" autocomplete="off" placeholder="Talk to me, or declare a goal..." 
+                                class="flex-grow bg-black border border-system-800 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-system-neon transition">
+                            <button type="submit" class="bg-system-900 hover:bg-system-600 text-system-neon hover:text-white border border-system-neon px-4 py-2 rounded font-system text-xs font-bold transition glow-system cursor-pointer">
+                                SEND
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 glass-panel border-system-neon text-system-neon px-6 py-3 rounded-lg font-system font-bold z-50 text-sm glow-system transition-opacity duration-300 opacity-0 pointer-events-none text-center">
+        NOTIFICATION
+    </div>
+
+    <script>
+        // --- Progressive Daily Quests Configuration ---
+        const PROGRESSIVE_DAILIES = [
+            { id: 'd1', title: 'Push-ups', base: 10, multi: 5, unit: 'Reps', xpPerLevel: 10, stats: { STR: 1 } },
+            { id: 'd2', title: 'Sit-ups', base: 10, multi: 5, unit: 'Reps', xpPerLevel: 10, stats: { VIT: 1 } },
+            { id: 'd3', title: 'Squats', base: 10, multi: 5, unit: 'Reps', xpPerLevel: 10, stats: { STR: 1, AGI: 1 } },
+            { id: 'd4', title: 'Running', base: 1, multi: 0.5, unit: 'km', xpPerLevel: 20, stats: { AGI: 2, VIT: 1 } }
+        ];
+
+        // --- Core State Management ---
+        const DEFAULT_STATE = {
+            level: 1,
+            xp: 0,
+            maxXp: 100,
+            hp: 100,
+            maxHp: 100,
+            mp: 50,
+            maxMp: 50,
+            stats: { STR: 10, AGI: 10, INT: 10, SEN: 10, VIT: 10 },
+            dailyQuestsState: {}, // Stores completion status like { 'd1': true }
+            lastLogin: new Date().toDateString(),
+            advisorQuests: [],
+            goals: [],
+            pending: null,
+            chatHistory: [
+                { sender: 'system', text: 'I am your Shadow. Talk to me, ask me anything, or declare an objective and I will build a 12-week, 3-phase plan. Before I add anything, I test it against every goal you already carry. If it will cost you, I will say so and ask for your call.' }
+            ]
+        };
+
+        let state = JSON.parse(localStorage.getItem('soloLevelingSave')) || JSON.parse(JSON.stringify(DEFAULT_STATE));
+        state.goals = state.goals || [];
+        state.pending = state.pending || null;
+        const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const num = n => Number(Number(n).toFixed(1));
+        state.records = state.records || {};
+        PROGRESSIVE_DAILIES.forEach(q => { if (!state.records[q.id]) state.records[q.id] = { name: q.title, unit: q.unit.toLowerCase(), dir: 'up', best: null, target: null, history: [], misses: 0, streak: 0, daily: true }; });
+        const CAPACITY_H = 25; // sustainable extra hours per week on top of the daily routine
+        const SLOT_CAP_H = 10; // max hours per week in one time-of-day slot
+
+        // Daily Reset Logic
+        const today = new Date().toDateString();
+        if (state.lastLogin !== today) {
+            PROGRESSIVE_DAILIES.forEach(q => { if (!state.dailyQuestsState[q.id]) { state.records[q.id].misses++; state.records[q.id].streak = 0; } });
+            state.dailyQuestsState = {}; // Reset completions
+            state.lastLogin = today;
+            saveState();
+        }
+
+        function saveState() {
+            localStorage.setItem('soloLevelingSave', JSON.stringify(state));
+            renderUI();
+        }
+
+        // --- Notification System ---
+        function showToast(msg, isHighlight = false) {
+            const toast = document.getElementById('toast');
+            toast.innerHTML = msg;
+            toast.className = `fixed top-5 left-1/2 transform -translate-x-1/2 glass-panel px-6 py-3 rounded-lg font-system font-bold z-50 text-sm transition-opacity duration-300 opacity-100 ${isHighlight ? 'border-white text-white shadow-[0_0_15px_rgba(255,255,255,0.8)]' : 'border-system-neon text-system-neon glow-system'}`;
+            setTimeout(() => {
+                toast.style.opacity = '0';
+            }, 4000);
+        }
+
+        // --- RPG Mechanics ---
+        function gainXP(amount) {
+            state.xp += amount;
+            let levelUp = false;
+            
+            while (state.xp >= state.maxXp) {
+                state.level++;
+                state.xp -= state.maxXp;
+                state.maxXp = Math.floor(state.maxXp * 1.5);
+                state.hp = state.maxHp; // Full heal
+                state.mp = state.maxMp;
+                levelUp = true;
+            }
+
+            if (levelUp) {
+                setTimeout(() => showToast(`LEVEL UP! You are now Lv. ${state.level}`, true), 2000);
+            }
+            saveState();
+        }
+
+        function completeQuest(questId, type) {
+            let quest, rewardXP, rewardStats;
+
+            if (type === 'daily') {
+                const template = PROGRESSIVE_DAILIES.find(q => q.id === questId);
+                if (!template || state.dailyQuestsState[questId]) return;
+                
+                state.dailyQuestsState[questId] = true;
+                state.records[questId].streak++; state.records[questId].misses = 0;
+                rewardXP = template.xpPerLevel * state.level;
+                rewardStats = template.stats;
+            } else {
+                quest = state.advisorQuests.find(q => q.id === questId);
+                if (!quest || quest.done) return;
+                
+                quest.done = true;
+                rewardXP = quest.xp;
+                rewardStats = quest.stats;
+            }
+            
+            // Construct Rewards Notification
+            let rewardMsgs = [`+${rewardXP} EXP`];
+            
+            // Apply Stats automatically
+            if (rewardStats) {
+                for (const [statKey, val] of Object.entries(rewardStats)) {
+                    if (state.stats[statKey] !== undefined) {
+                        state.stats[statKey] += val;
+                        rewardMsgs.push(`+${val} ${statKey}`);
+                        
+                        // Passive effects
+                        if (statKey === 'VIT') state.maxHp += (val * 10);
+                        if (statKey === 'INT') state.maxMp += (val * 5);
+                    }
+                }
+            }
+
+            // Flavor stamina drain
+            state.hp = Math.max(1, state.hp - 5); 
+            
+            gainXP(rewardXP);
+            saveState();
+            
+            showToast(`QUEST CLEARED<br/><span class="text-xs font-mono text-white">${rewardMsgs.join(' | ')}</span>`);
+        }
+
+        // --- Advisor AI Logic ---
+        function appendChatMsg(sender, text, isHtml = false) {
+            const container = document.getElementById('chat-container');
+            const div = document.createElement('div');
+            
+            if (sender === 'player') {
+                div.className = "flex items-start space-x-3 justify-end";
+                div.innerHTML = `
+                    <div class="bg-system-900/40 border border-system-600 rounded-lg p-3 max-w-[85%] text-sm text-white">
+                        ${text}
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-system-900 border border-system-400 flex-shrink-0 flex items-center justify-center text-xs">
+                        <i class="fa-solid fa-user text-system-400"></i>
+                    </div>
+                `;
+            } else {
+                div.className = "flex items-start space-x-3";
+                div.innerHTML = `
+                    <div class="w-8 h-8 rounded-full bg-system-900/50 border border-system-neon flex-shrink-0 flex items-center justify-center text-xs glow-system">
+                        <i class="fa-solid fa-eye text-system-neon animate-pulse"></i>
+                    </div>
+                    <div class="bg-gray-900/90 border border-system-600 rounded-lg p-3 max-w-[85%] text-sm text-system-neon border-pulse-system">
+                        ${isHtml ? text : `<span class="typewriter">${text}</span>`}
+                    </div>
+                `;
+                
+                if(!isHtml) {
+                    setTimeout(() => {
+                        const tw = div.querySelector('.typewriter');
+                        if(tw) {
+                            tw.classList.remove('typewriter');
+                            tw.innerText = text;
+                        }
+                    }, Math.min(text.length * 20, 1500)); 
+                }
+            }
+            
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+            
+            if(!isHtml && sender === 'system') {
+                state.chatHistory.push({ sender, text });
+                saveState();
+            } else if (sender === 'player') {
+                state.chatHistory.push({ sender, text });
+                // We don't save immediately here to avoid UI stutter before AI response
+            }
+        }
+
+        function restoreChatHistory() {
+            const container = document.getElementById('chat-container');
+            container.innerHTML = ''; // clear first
+            state.chatHistory.forEach(msg => {
+                const div = document.createElement('div');
+                if (msg.sender === 'player') {
+                    div.className = "flex items-start space-x-3 justify-end";
+                    div.innerHTML = `
+                        <div class="bg-system-900/40 border border-system-600 rounded-lg p-3 max-w-[85%] text-sm text-white">${msg.text}</div>
+                        <div class="w-8 h-8 rounded-full bg-system-900 border border-system-400 flex-shrink-0 flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-user text-system-400"></i>
+                        </div>
+                    `;
+                } else {
+                    div.className = "flex items-start space-x-3";
+                    div.innerHTML = `
+                        <div class="w-8 h-8 rounded-full bg-system-900/50 border border-system-neon flex-shrink-0 flex items-center justify-center text-xs glow-system">
+                            <i class="fa-solid fa-eye text-system-neon"></i>
+                        </div>
+                        <div class="bg-gray-900/90 border border-system-600 rounded-lg p-3 max-w-[85%] text-sm text-system-neon">${msg.text}</div>
+                    `;
+                }
+                container.appendChild(div);
+            });
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // --- Advisor Brain: intent detection + conflict guard ---
+        const fmt = s => esc(s).replace(/\n/g, '<br/>');
+        const plain = h => String(h).replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').slice(0, 400);
+        function activeGoals() { return state.goals.filter(g => g.status === 'active'); }
+        function loadHours() { return num(activeGoals().reduce((s, g) => s + g.hoursPerWeek, 0)); }
+        const STAT_BY_CAT = {
+            physical: [{ STR: 2, VIT: 1 }, { AGI: 2, VIT: 1 }, { STR: 1, AGI: 1 }],
+            mental: [{ INT: 2, SEN: 1 }, { INT: 1 }, { SEN: 1, INT: 1 }],
+            general: [{ INT: 1, STR: 1 }, { SEN: 1, VIT: 1 }, { INT: 1, SEN: 1 }]
+        };
+        const LOCAL_QUESTS = {
+            physical: [{ title: 'Physical Eradication', desc: 'Execute the Phase 1 conditioning session without skipping a set.' }, { title: 'Cardiovascular Tax', desc: 'Hold an elevated heart rate for 30 minutes.' }, { title: 'Recovery Protocol', desc: 'Stretch 15 minutes and sleep at least 7 hours tonight.' }],
+            mental: [{ title: 'Unyielding Focus', desc: 'Do 90 minutes of distraction-free study on the subject.' }, { title: 'Information Extraction', desc: 'Write a one-page summary of what you learned today.' }, { title: 'Active Recall', desc: 'Test yourself for 20 minutes without notes.' }],
+            general: [{ title: 'Relentless Progression', desc: 'Spend 60 focused minutes advancing this objective.' }, { title: 'Tactical Reconnaissance', desc: 'Write the exact steps for tomorrow (20 minutes).' }, { title: 'Review the Line', desc: 'Check today\'s progress against the Phase 1 target.' }]
+        };
+        const PHASES = `<span class="text-system-400 font-bold">PHASE 1 (Weeks 1-4):</span> Build the baseline.<br/><span class="text-system-400 font-bold">PHASE 2 (Weeks 5-8):</span> Progressive overload.<br/><span class="text-system-400 font-bold">PHASE 3 (Weeks 9-12):</span> Mastery and test.`;
+        let busy = false;
+
+        // Local fallback: used when /api/advisor is unreachable
+        function localBrain(msg) {
+            const l = msg.trim().toLowerCase();
+            if (state.pending) {
+                if (/^(no|nope|cancel|skip|never ?mind|forget it|discard)\b/.test(l)) return { intent: 'decision', decision: 'cancel' };
+                if (/\b(replace|swap|instead|switch)\b/.test(l)) return { intent: 'decision', decision: 'replace' };
+                if (/\b(both|together|squeeze|reduced?|scale|lighter)\b/.test(l)) return { intent: 'decision', decision: 'both' };
+            }
+            const m = l.match(/^(pause|stop|resume|restart)\s+(.+)/);
+            if (m) return { intent: 'manage', action: /pause|stop/.test(m[1]) ? 'pause' : 'resume', target: m[2] };
+            const question = /\?\s*$/.test(l) || /^(how|what|why|when|where|who|can|could|should|do|does|is|are|will|would)\b/.test(l);
+            const cue = /\b(i want to|i wanna|i'?d like to|my goal|i will|i'?m going to|i plan to|i'?m starting|i commit|i aim to)\b|^(learn|run|build|read|write|master|lose|gain|train|study|complete|finish|pass|prepare)\b/.test(l);
+            if (cue && !question) return { intent: 'goal', goal: localExtract(msg) };
+            return { intent: 'chat' };
+        }
+
+        function localExtract(t) {
+            const l = t.toLowerCase();
+            const title = t.replace(/^(i want to|i wanna|i'd like to|i will|i'm going to|i plan to|my goal is to|my goal is)\s*/i, '').replace(/,?\s*\d+(?:\.\d+)?\s*(?:h|hr|hrs|hours?)\s*(?:a|per|\/|each)\s*(?:day|week)/gi, '').replace(/,?\s*(?:in the |every )?(?:morning|afternoon|evening|night)s?\b/gi, '').replace(/,?\s*\b(?:intense|hard|heavy)\s*$/i, '').replace(/[.!,\s]+$/, '').slice(0, 60);
+            const category = /run|marathon|weight|fat|muscle|workout|gym|lift|swim|walk|cycle|fit|athlet|body/.test(l) ? 'physical' : /study|learn|code|python|read|math|book|build|language|exam|write|course/.test(l) ? 'mental' : 'general';
+            let hours = { physical: 5, mental: 7, general: 5 }[category];
+            const h = l.match(/(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hours?)\s*(?:a|per|\/|each)\s*(day|week)/);
+            if (h) hours = h[2] === 'day' ? h[1] * 7 : +h[1];
+            const slot = (l.match(/\b(morning|afternoon|evening|night)\b/) || [])[1] || 'flex';
+            const intensity = category === 'physical' ? (/marathon|competition|intense|hard|heavy|triathlon/.test(l) ? 4 : 3) : category === 'mental' ? 3 : 2;
+            return { title: title.charAt(0).toUpperCase() + title.slice(1), category, hoursPerWeek: hours, slot, intensity };
+        }
+
+        function localChat(msg) {
+            const l = msg.toLowerCase(), n = activeGoals().length;
+            if (/^(hi|hey|hello|yo|sup)\b/.test(l)) return `I am watching, Player. Level ${state.level}. ${n ? `You carry ${n} active goal(s) at ${loadHours()}h/week.` : 'You carry no active goals.'}\nSpeak, or declare an objective.`;
+            if (/work ?out|exercise|routine|full.?body|gym|training/.test(l)) return `Full-body baseline, 3 days a week with a rest day between:\n1. Squats 3x8-10\n2. Push-ups 3 sets, stop 2 reps short of failure\n3. Backpack or dumbbell rows 3x10 per side\n4. Romanian deadlift (light) 3x10\n5. Plank 3x30-45s\n\nWarm up 5 minutes. Rest 60-90s between sets. Add 1-2 reps per session; when every set hits the top of the range, add weight or a harder variation.\n\nMy planning brain is offline, so this is a generic baseline. With the server connected I tailor it to your stats and records.`;
+            if (/status|progress|how am i|where am i|goals?\b/.test(l)) return n ? `Active: ${activeGoals().map(g => g.title).join('; ')}.\nLoad: ${loadHours()}/${CAPACITY_H}h per week.` : 'No active goals. Declare one.';
+            if (/thank/.test(l)) return 'Gratitude is unnecessary. Execution is.';
+            return 'Understood. If this is a commitment, state it plainly, for example "I want to learn Python, 1 hour a day in the evening", and I will test it against your current load.';
+        }
+
+        function normGoal(g) {
+            const cats = ['physical', 'mental', 'general'], slots = ['morning', 'afternoon', 'evening', 'night', 'flex'];
+            return {
+                title: String(g.title || 'Unnamed objective').slice(0, 70),
+                category: cats.includes(g.category) ? g.category : 'general',
+                hoursPerWeek: Math.min(40, Math.max(0.5, Number(g.hoursPerWeek) || 5)),
+                slot: slots.includes(g.slot) ? g.slot : 'flex',
+                intensity: Math.min(5, Math.max(1, Math.round(Number(g.intensity)) || 3)),
+                quests: Array.isArray(g.quests) ? g.quests.slice(0, 3).map(q => ({ title: String(q.title || 'Directive').slice(0, 50), desc: String(q.desc || '').slice(0, 160) })) : [],
+                metric: g.metric && typeof g.metric === 'object' && g.metric.name ? { name: String(g.metric.name).slice(0, 40), unit: String(g.metric.unit || 'min').slice(0, 12), dir: g.metric.direction === 'down' ? 'down' : 'up' } : null,
+                resumeId: g.resumeId
+            };
+        }
+
+        function sameGoal(a, b) {
+            const w = s => new Set(s.toLowerCase().match(/[a-z]{4,}/g) || []);
+            const A = w(a), B = w(b), shared = [...A].filter(x => B.has(x)).length;
+            return shared > 0 && shared >= Math.min(A.size, B.size);
+        }
+
+        // The guard: will this commitment hurt what the player already carries?
+        function findConflicts(g) {
+            const act = activeGoals(), out = [];
+            const dup = act.find(a => sameGoal(a.title, g.title));
+            if (dup) return [{ type: 'duplicate', withIds: [dup.id], msg: `You already run "${dup.title}". This is the same objective.` }];
+            const total = num(loadHours() + g.hoursPerWeek);
+            if (total > CAPACITY_H) {
+                const ids = []; let t = total;
+                [...act].sort((a, b) => b.hoursPerWeek - a.hoursPerWeek).forEach(a => { if (t > CAPACITY_H) { ids.push(a.id); t -= a.hoursPerWeek; } });
+                out.push({ type: 'time', withIds: ids, msg: `Total load would reach ${total}h/week. Your sustainable limit is ${CAPACITY_H}h.` });
+            }
+            act.forEach(a => {
+                if (g.slot !== 'flex' && a.slot === g.slot && a.hoursPerWeek + g.hoursPerWeek > SLOT_CAP_H)
+                    out.push({ type: 'slot', withIds: [a.id], msg: `"${a.title}" already owns your ${g.slot} (${a.hoursPerWeek}h/week). Adding ${g.hoursPerWeek}h overflows that slot.` });
+                if (a.category === 'physical' && g.category === 'physical' && a.intensity >= 4 && g.intensity >= 4)
+                    out.push({ type: 'recovery', withIds: [a.id], msg: `"${a.title}" and this goal are both high-intensity physical work. Your body gets no recovery.` });
+            });
+            return out;
+        }
+
+        function say(html) {
+            appendChatMsg('system', html, true);
+            state.chatHistory.push({ sender: 'system', text: html });
+            saveState();
+        }
+
+        function activateGoal(g) {
+            if (g.resumeId) state.goals = state.goals.filter(x => x.id !== g.resumeId);
+            const id = g.resumeId || 'g_' + Date.now();
+            const base = g.quests.length ? g.quests : LOCAL_QUESTS[g.category];
+            state.goals.push({ id, title: g.title, category: g.category, hoursPerWeek: g.hoursPerWeek, slot: g.slot, intensity: g.intensity, status: 'active', startedAt: Date.now() });
+            state.advisorQuests.push(...questsFor(id, g.title, g.category, base));
+            if (!state.records['m_' + id]) { const m = g.metric || { name: 'Best session', unit: 'min', dir: 'up' }; state.records['m_' + id] = { name: m.name, unit: m.unit, dir: m.dir, best: null, target: null, history: [], misses: 0, streak: 0, goalId: id }; }
+            document.getElementById('nav-quests').classList.add('glow-system', 'border-system-neon', 'text-system-neon');
+            return id;
+        }
+
+        function pauseGoal(id) {
+            const g = state.goals.find(x => x.id === id);
+            if (g) g.status = 'paused';
+            state.advisorQuests = state.advisorQuests.filter(q => q.goalId !== id || q.done);
+        }
+
+        function proposeGoal(g, ack, note = '') {
+            const conflicts = findConflicts(g);
+            if (!conflicts.length) {
+                enrichPlan(activateGoal(g));
+                return say(`<strong class="text-white">GOAL LOCKED.</strong> "${esc(g.title)}" at ${g.hoursPerWeek}h/week.<br/>${ack ? fmt(ack) + '<br/>' : ''}<br/>${PHASES}<br/><br/>Phase 1 directives are in your Quest Log. Load: ${loadHours()}/${CAPACITY_H}h. No conflict with your active goals.${note}`);
+            }
+            state.pending = { goal: g, conflicts };
+            const btn = (k, label) => `<button onclick="quickReply('${k}')" class="px-2 py-1 mr-1 mt-2 border border-system-neon rounded text-[10px] font-bold text-system-neon hover:bg-system-600 hover:text-white">${label}</button>`;
+            say(`<strong class="text-white">CONFLICT DETECTED.</strong> Taking on "${esc(g.title)}" (${g.hoursPerWeek}h/week, ${esc(g.slot)}) would hurt what you already carry:<br/>${conflicts.map(c => '• ' + esc(c.msg)).join('<br/>')}<br/><br/>This is your decision. What is your call?<br/>${btn('replace', 'REPLACE: pause the conflicting goal(s)')}${btn('both', 'BOTH: run it at reduced load')}${btn('cancel', 'CANCEL')}${note}`);
+        }
+
+        function resolvePending(decision) {
+            const p = state.pending;
+            if (!p) return showToast('No pending decision.');
+            state.pending = null;
+            const t = esc(p.goal.title);
+            if (decision === 'cancel') return say(`Discarded: "${t}". Your current trajectory is untouched.`);
+            if (decision === 'replace') {
+                const ids = [...new Set(p.conflicts.flatMap(c => c.withIds))];
+                const names = ids.map(id => { const g = state.goals.find(x => x.id === id); pauseGoal(id); return esc(g ? g.title : id); });
+                enrichPlan(activateGoal(p.goal));
+                return say(`Done. Paused: ${names.join(', ')}.<br/>"${t}" is active and its Phase 1 directives are in your Quest Log.<br/>Say "resume" followed by the goal name when you have capacity again.`);
+            }
+            const g = { ...p.goal, hoursPerWeek: num(Math.min(p.goal.hoursPerWeek, Math.max(1, CAPACITY_H - loadHours()))), slot: 'flex', intensity: Math.max(1, p.goal.intensity - 1) };
+            enrichPlan(activateGoal(g));
+            say(`Compromise accepted. "${t}" runs lean: ${g.hoursPerWeek}h/week in flexible slots, intensity ${g.intensity}/5. Progress will be slower. Your other goals are unchanged.${loadHours() > CAPACITY_H ? `<br/><br/>Warning: you are still ${num(loadHours() - CAPACITY_H)}h over your limit. Consider pausing something soon.` : ''}`);
+        }
+
+        function quickReply(decision) {
+            if (!state.pending) return showToast('No pending decision.');
+            appendChatMsg('player', decision.toUpperCase());
+            resolvePending(decision);
+        }
+
+        function manageGoal(r) {
+            const key = String(r.target || '').toLowerCase();
+            const pool = state.goals.filter(g => r.action === 'resume' ? g.status === 'paused' : g.status === 'active');
+            const g = pool.find(x => x.id === r.target) || pool.find(x => key && (x.title.toLowerCase().includes(key) || key.includes(x.title.toLowerCase())));
+            if (!g) return say(`I cannot find ${r.action === 'resume' ? 'a paused' : 'an active'} goal matching "${esc(key)}".`);
+            if (r.action === 'pause') { pauseGoal(g.id); return say(`Paused: "${esc(g.title)}". Its open directives are removed. Load is now ${loadHours()}/${CAPACITY_H}h.`); }
+            proposeGoal({ ...g, quests: [], resumeId: g.id }); // resuming is a commitment too, so it is checked
+        }
+
+        async function callApi(url, body, ms) {
+            const ctrl = new AbortController(), to = setTimeout(() => ctrl.abort(), ms);
+            try {
+                const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctrl.signal, body: JSON.stringify(body) });
+                return res.ok ? await res.json() : null;
+            } catch (e) { return null; } finally { clearTimeout(to); }
+        }
+
+        const askServer = (message) => callApi('/api/advisor', {
+            message, level: state.level, capacity: CAPACITY_H, stats: state.stats,
+            records: Object.fromEntries(Object.values(state.records).filter(r => r.best !== null).map(r => [r.name, r.best + ' ' + r.unit])),
+            goals: state.goals.map(({ id, title, category, hoursPerWeek, slot, intensity, status }) => ({ id, title, category, hoursPerWeek, slot, intensity, status })),
+            pending: state.pending ? { title: state.pending.goal.title, conflicts: state.pending.conflicts.map(c => c.msg) } : null,
+            history: state.chatHistory.slice(-9, -1).map(m => ({ role: m.sender === 'player' ? 'user' : 'assistant', content: plain(m.text) }))
+        }, 45000);
+
+        // --- Personal Records + adaptive targets ---
+        function questsFor(id, title, cat, list) {
+            const xp = 50 + state.level * 10;
+            return list.map((q, i) => ({ id: `a_${id}_${Date.now()}_${i}`, goalId: id, title: esc(q.title), desc: `[${esc(title)}] ${esc(q.desc)}`, xp, stats: STAT_BY_CAT[cat][i % 3], done: false }));
+        }
+
+        // Daily target = max(level scaling, 80% of PR), x0.8 after 3 misses (deload), x1.1 after a 5-day streak (overload)
+        function dailyTarget(q) {
+            const r = state.records[q.id], f = r.misses >= 3 ? 0.8 : r.streak >= 5 ? 1.1 : 1;
+            const t = Math.max(q.base + q.multi * state.level, (r.best || 0) * 0.8) * f;
+            return q.unit === 'km' ? Math.round(t * 10) / 10 : Math.round(t);
+        }
+
+        const stepTarget = r => Number((r.dir === 'up' ? r.best * 1.05 : r.best * 0.97).toFixed(2));
+
+        function logPR(id) {
+            const r = state.records[id], inp = document.getElementById('pr-in-' + id), v = parseFloat(inp && inp.value);
+            if (!r || !(v > 0)) return showToast('Enter a number above 0.');
+            r.history = [...r.history, { v, t: Date.now() }].slice(-30);
+            const first = r.best === null, isPR = !first && (r.dir === 'up' ? v > r.best : v < r.best);
+            if (first || isPR) { r.best = v; if (!r.daily) r.target = stepTarget(r); }
+            if (!isPR) { saveState(); return showToast(first ? `Baseline set: ${v} ${esc(r.unit)}` : `Logged. Your PR is still ${r.best} ${esc(r.unit)}.`); }
+            const cat = (state.goals.find(g => g.id === r.goalId) || {}).category;
+            const stat = r.daily ? Object.keys(PROGRESSIVE_DAILIES.find(q => q.id === id).stats)[0] : { physical: 'STR', mental: 'INT' }[cat] || 'SEN';
+            state.stats[stat] += 1;
+            showToast(`NEW PERSONAL RECORD<br/><span class="text-xs text-white">${v} ${esc(r.unit)} | +1 ${stat} | +${25 + state.level * 5} EXP</span>`, true);
+            gainXP(25 + state.level * 5);
+            if (r.goalId) adaptTarget(id);
+        }
+
+        // Planner model refines the next target after a PR (local 5% step stays if it is unreachable or unreasonable)
+        async function adaptTarget(id) {
+            const r = state.records[id], g = state.goals.find(x => x.id === r.goalId);
+            const out = g && await callApi('/api/plan', { mode: 'adapt', goal: g.title, metric: { name: r.name, unit: r.unit, direction: r.dir, best: r.best }, history: r.history.slice(-6).map(h => h.v) }, 50000);
+            const nt = out && Number(out.nextTarget);
+            if (!nt || !(r.dir === 'up' ? nt > r.best && nt <= r.best * 1.25 : nt < r.best && nt >= r.best * 0.8)) return;
+            r.target = Number(nt.toFixed(2));
+            say(`<strong class="text-white">PLANNER ADJUSTMENT:</strong> next target for ${esc(r.name)} is ${r.target} ${esc(r.unit)}.<br/>${esc(out.note || '')}`);
+        }
+
+        // Planner model builds the 3-phase plan, a progress metric and Phase 1 quests for a locked goal
+        async function enrichPlan(id) {
+            const g = state.goals.find(x => x.id === id);
+            if (!g) return;
+            const out = await callApi('/api/plan', { mode: 'plan', level: state.level, goal: { title: g.title, category: g.category, hoursPerWeek: g.hoursPerWeek, slot: g.slot, intensity: g.intensity }, others: activeGoals().filter(x => x.id !== id).map(x => x.title) }, 55000);
+            if (!out || !Array.isArray(out.phases) || out.phases.length !== 3) return;
+            g.phases = out.phases;
+            const rec = state.records['m_' + id];
+            if (rec && rec.best === null && out.metric && out.metric.name) Object.assign(rec, { name: out.metric.name, unit: out.metric.unit || rec.unit, dir: out.metric.direction });
+            if (out.quests && out.quests.length) {
+                state.advisorQuests = state.advisorQuests.filter(q => q.goalId !== id || q.done);
+                state.advisorQuests.push(...questsFor(id, g.title, g.category, out.quests));
+            }
+            say(`<strong class="text-white">PLANNER REPORT: ${esc(g.title)}</strong><br/>${g.phases.map(p => `<span class="text-system-400 font-bold">Weeks ${esc(p.weeks)}:</span> ${esc(p.focus)}. Target: ${esc(p.target)}`).join('<br/>')}<br/><br/>Phase 1 directives updated. Track progress under Personal Records: ${esc(rec ? rec.name : 'metric')} (${esc(rec ? rec.unit : '')}).`);
+        }
+
+        function route(r, msg, offline) {
+            const note = offline ? `<div class="text-[10px] text-gray-500 mt-2">Local analysis mode: server unreachable.</div>` : '';
+            if (r.intent === 'decision' && state.pending && ['replace', 'both', 'cancel'].includes(r.decision)) return resolvePending(r.decision);
+            if (r.intent === 'goal' && r.goal) return proposeGoal(normGoal(r.goal), r.reply, note);
+            if (r.intent === 'manage' && ['pause', 'resume'].includes(r.action)) return manageGoal(r);
+            const remind = state.pending ? `<br/><br/><span class="text-white">Still waiting on your call for "${esc(state.pending.goal.title)}": REPLACE, BOTH or CANCEL.</span>` : '';
+            say(fmt(r.reply || localChat(msg)) + remind + note);
+        }
+
+        document.getElementById('goal-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('goal-input');
+            const msg = input.value.trim().slice(0, 500);
+            if (!msg || busy) return;
+            if (/^\/?clear( chat)?$/i.test(msg)) { input.value = ''; state.chatHistory = []; document.getElementById('chat-container').innerHTML = ''; return say('Chat cleared. Your goals, records and progress are untouched.'); }
+            busy = true; input.value = '';
+            appendChatMsg('player', esc(msg));
+            appendChatMsg('system', '<span class="animate-pulse">Analyzing...</span>', true);
+            const thinking = document.getElementById('chat-container').lastElementChild;
+            let r = await askServer(msg), offline = false;
+            if (!r) { r = localBrain(msg); offline = true; }
+            thinking.remove();
+            route(r, msg, offline);
+            busy = false;
+        });
+
+        // --- UI Rendering ---
+        function renderUI() {
+            // Vitals & Top Level
+            document.getElementById('ui-level').innerText = state.level;
+            document.getElementById('ui-xp').innerText = state.xp;
+            document.getElementById('ui-maxXp').innerText = state.maxXp;
+            document.getElementById('ui-xpBar').style.width = `${(state.xp / state.maxXp) * 100}%`;
+            
+            document.getElementById('ui-hpText').innerText = `${state.hp}/${state.maxHp}`;
+            document.getElementById('ui-hpBar').style.width = `${(state.hp / state.maxHp) * 100}%`;
+            
+            document.getElementById('ui-mpText').innerText = `${state.mp}/${state.maxMp}`;
+            document.getElementById('ui-mpBar').style.width = `${(state.mp / state.maxMp) * 100}%`;
+
+            document.getElementById('advisor-sub').innerText = `ACTIVE GOALS: ${activeGoals().length} | LOAD ${loadHours()}/${CAPACITY_H}h`;
+
+            const prc = document.getElementById('pr-container');
+            prc.innerHTML = '';
+            Object.entries(state.records).forEach(([id, r]) => {
+                const g = r.goalId && state.goals.find(x => x.id === r.goalId);
+                if (r.goalId && (!g || g.status !== 'active')) return;
+                prc.innerHTML += `<div class="p-3 rounded-lg border border-system-900 bg-black/60">
+                    <div class="flex justify-between text-xs"><span class="font-bold text-gray-100">${esc(r.name)}</span><span class="text-system-neon font-system">${r.best === null ? 'NO RECORD' : 'PR ' + r.best + ' ' + esc(r.unit)}</span></div>
+                    ${r.target ? `<div class="text-[10px] text-system-400 mt-1">Next target: ${r.target} ${esc(r.unit)}${r.dir === 'down' ? ' (lower is better)' : ''}</div>` : ''}
+                    <div class="flex gap-2 mt-2"><input id="pr-in-${id}" type="number" inputmode="decimal" step="any" placeholder="${esc(r.unit)}" class="flex-grow bg-black border border-system-800 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-system-neon">
+                    <button onclick="logPR('${id}')" class="px-3 py-1 rounded text-xs font-bold border border-system-neon bg-system-900 text-system-neon hover:bg-system-600 hover:text-white cursor-pointer">LOG</button></div></div>`;
+            });
+
+            // Stats Block
+            const statsContainer = document.getElementById('stats-container');
+            statsContainer.innerHTML = '';
+            for (const [stat, val] of Object.entries(state.stats)) {
+                statsContainer.innerHTML += `
+                    <div class="bg-black/60 border border-system-900 p-3 rounded flex flex-col justify-center items-center relative">
+                        <span class="text-xs text-system-400 font-bold mb-1">${stat}</span>
+                        <span class="font-system text-2xl text-system-neon text-glow-system">${val}</span>
+                    </div>
+                `;
+            }
+
+            // Helpers for Quest UI Rendering
+            const buildQuestCard = (id, title, desc, xp, stats, done, type) => {
+                const statusClass = done ? 'bg-gray-900 border-gray-800 opacity-50' : 'bg-black/60 border-system-900 hover:border-system-600';
+                const btnClass = done ? 'bg-gray-800 text-gray-600 cursor-not-allowed border-gray-700' : 'bg-system-900 text-system-neon hover:bg-system-600 hover:text-white glow-system cursor-pointer border-system-neon';
+                
+                let statsHtml = '';
+                if (stats && !done) {
+                    for(const [sKey, sVal] of Object.entries(stats)) {
+                        statsHtml += `<span class="inline-block bg-system-900/50 text-system-neon text-[9px] px-1.5 py-0.5 rounded border border-system-800 mr-1">+${sVal} ${sKey}</span>`;
+                    }
+                }
+
+                return `
+                    <div class="p-4 rounded-lg border ${statusClass} flex flex-col sm:flex-row sm:justify-between sm:items-center transition gap-3">
+                        <div>
+                            <h4 class="font-system text-sm font-bold ${done ? 'text-gray-500 line-through' : 'text-gray-100'}">${title}</h4>
+                            <p class="text-xs text-system-400 mt-1 mb-2 font-bold">${desc}</p>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-[10px] font-bold text-gray-300 bg-gray-800 px-2 py-0.5 rounded border border-gray-700">REWARD: ${xp} EXP</span>
+                                ${statsHtml}
+                            </div>
+                        </div>
+                        <button onclick="completeQuest('${id}', '${type}')" ${done ? 'disabled' : ''} class="w-full sm:w-auto px-4 py-2 rounded text-xs font-bold border transition ${btnClass}">
+                            ${done ? 'CLEARED' : 'COMPLETE'}
+                        </button>
+                    </div>
+                `;
+            };
+
+            // Render Dailies (Progressively Scaled)
+            const dailyContainer = document.getElementById('daily-quests-container');
+            dailyContainer.innerHTML = '';
+            PROGRESSIVE_DAILIES.forEach(q => {
+                const isDone = !!state.dailyQuestsState[q.id];
+                const rc = state.records[q.id];
+                const desc = `${dailyTarget(q)} ${q.unit}${rc.misses >= 3 ? ' (DELOAD)' : rc.streak >= 5 ? ' (OVERLOAD)' : ''}`;
+                const xp = q.xpPerLevel * state.level;
+                
+                dailyContainer.innerHTML += buildQuestCard(q.id, q.title, desc, xp, q.stats, isDone, 'daily');
+            });
+
+            // Render Advisor Quests
+            const advContainer = document.getElementById('advisor-quests-container');
+            advContainer.innerHTML = '';
+            if(state.advisorQuests.length === 0) {
+                advContainer.innerHTML = `<p class="text-xs text-gray-600 font-bold">No active directives. Speak to Shadow Slave.</p>`;
+            } else {
+                state.advisorQuests.forEach(q => {
+                    advContainer.innerHTML += buildQuestCard(q.id, q.title, q.desc, q.xp, q.stats, q.done, 'advisor');
+                });
+            }
+        }
+
+        // --- Navigation ---
+        function switchTab(tabId) {
+            ['status', 'quests', 'advisor'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                document.getElementById(`view-${t}`).classList.remove('block');
+                
+                const btn = document.getElementById(`nav-${t}`);
+                btn.className = "flex-1 py-3 rounded glass-panel font-system font-bold text-gray-500 border-gray-800 hover:bg-system-900 transition tab-btn";
+            });
+
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            document.getElementById(`view-${tabId}`).classList.add('block');
+            
+            const activeBtn = document.getElementById(`nav-${tabId}`);
+            activeBtn.className = "flex-1 py-3 rounded glass-panel font-system font-bold text-system-neon border-system-neon hover:bg-system-900 transition tab-btn glow-system";
+
+            if (tabId === 'quests') {
+                activeBtn.classList.remove('glow-system', 'border-system-neon', 'text-system-neon');
+                activeBtn.classList.add('text-system-neon', 'border-system-neon'); 
+            }
+        }
+
+        // --- Draggable Icon Logic ---
+        const icon = document.getElementById('shadow-icon');
+        let isDragging = false;
+        let dragStartX = 0, dragStartY = 0;
+        let initialX = 0, initialY = 0;
+        const dragThreshold = 8; // pixels moved to count as drag
+
+        function onDragStart(e) {
+            isDragging = false;
+            if (e.type === 'touchstart') {
+                dragStartX = e.touches[0].clientX;
+                dragStartY = e.touches[0].clientY;
+            } else {
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                e.preventDefault(); 
+            }
+            initialX = dragStartX;
+            initialY = dragStartY;
+
+            document.addEventListener('mousemove', onDragMove);
+            document.addEventListener('mouseup', onDragEnd);
+            document.addEventListener('touchmove', onDragMove, {passive: false});
+            document.addEventListener('touchend', onDragEnd);
+        }
+
+        function onDragMove(e) {
+            let clientX, clientY;
+            if (e.type === 'touchmove') {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            const dx = Math.abs(clientX - initialX);
+            const dy = Math.abs(clientY - initialY);
+
+            // Once past threshold, confirm it's a drag
+            if (dx > dragThreshold || dy > dragThreshold) {
+                isDragging = true;
+                if(e.cancelable) e.preventDefault(); 
+
+                icon.style.left = (clientX - icon.offsetWidth / 2) + 'px';
+                icon.style.top = (clientY - icon.offsetHeight / 2) + 'px';
+                icon.style.bottom = 'auto'; 
+                icon.style.right = 'auto';
+            }
+        }
+
+        function onDragEnd(e) {
+            document.removeEventListener('mousemove', onDragMove);
+            document.removeEventListener('mouseup', onDragEnd);
+            document.removeEventListener('touchmove', onDragMove);
+            document.removeEventListener('touchend', onDragEnd);
+        }
+
+        icon.addEventListener('mousedown', onDragStart);
+        icon.addEventListener('touchstart', onDragStart, {passive: false});
+
+        // Click handler checks if a drag occurred
+        icon.addEventListener('click', (e) => {
+            if (isDragging) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            switchTab('advisor');
+        });
+
+        // Initialize
+        restoreChatHistory();
+        renderUI();
+
+    </script>
+</body>
+</html>
