@@ -63,7 +63,7 @@ ${message}
 </player_message>`;
 
   try {
-    const { text } = await callLLM({ system: SYSTEM, user: content, models: CHAT_MODELS, maxTokens: 2000, ms: 20000, accept: validJSON });
+    const { text } = await callLLM({ system: SYSTEM, user: content, models: CHAT_MODELS, maxTokens: 2000, ms: 15000, accept: validJSON });
     let out;
     const raw = clean(text);
     try { out = parseJSON(raw); }
