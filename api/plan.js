@@ -1,5 +1,5 @@
 // POST /api/plan  { mode: "plan" | "adapt", ... }  -> planner model (reasoning-class) output
-const { callLLM, parseJSON, hasKey, limited, PLAN_MODELS } = require('./_llm');
+const { callLLM, parseJSON, clean, validJSON, hasKey, limited, PLAN_MODELS } = require('./_llm');
 
 const SYSTEM = `You are a periodization and learning-plan specialist for a self-improvement RPG app. Think carefully, then answer with ONLY one JSON object (no markdown, no commentary).
 Rules: be realistic and safe. Progressive overload at most 10% per week. Physical goals get a lighter deload week at weeks 4 and 8. Respect the stated weekly hours and time slot. Keep all text short and concrete.
@@ -22,8 +22,8 @@ module.exports = async (req, res) => {
     ? { mode, level: Number(b.level) || 1, goal: { title: clip(b.goal && b.goal.title, 70), category: clip(b.goal && b.goal.category, 12), hoursPerWeek: Number(b.goal && b.goal.hoursPerWeek) || 5, slot: clip(b.goal && b.goal.slot, 12), intensity: Number(b.goal && b.goal.intensity) || 3 }, others: (b.others || []).slice(0, 10).map(x => clip(x, 70)) }
     : { mode, goal: clip(b.goal, 70), metric: b.metric || {}, history: (Array.isArray(b.history) ? b.history : []).slice(-6).map(Number).filter(Number.isFinite) };
   try {
-    const { text } = await callLLM({ system: SYSTEM, user: JSON.stringify(input), models: PLAN_MODELS, maxTokens: 2500, ms: 25000 });
-    const o = parseJSON(text);
+    const { text } = await callLLM({ system: SYSTEM, user: JSON.stringify(input), models: PLAN_MODELS, maxTokens: 2500, ms: 25000, effort: 'medium', accept: validJSON });
+    const o = parseJSON(clean(text));
     if (mode === 'adapt') return res.status(200).json({ nextTarget: Number(o.nextTarget) || null, note: clip(o.note, 200) });
     const m = o.metric || {};
     return res.status(200).json({
