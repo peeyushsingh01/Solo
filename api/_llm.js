@@ -42,10 +42,13 @@ async function post(url, headers, body, ms) {
 // Tries each free model in order, then Anthropic if a key is set. Returns { text, model }.
 exports.callLLM = async ({ system, user, models, maxTokens = 900, ms = 12000, effort = 'low', accept }) => {
   let last = null; // best broken answer, used only if no model gives a clean one
+  const end = Date.now() + 40000; // total budget, so the function never outlives the browser's wait
   if (OR) for (const model of models) {
+    const left = end - Date.now();
+    if (left < 3000) break;
     try {
       const r = await post('https://openrouter.ai/api/v1/chat/completions', { authorization: 'Bearer ' + OR, 'x-title': 'Solo Leveling System' },
-        { model, max_tokens: maxTokens, reasoning: { effort }, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] }, ms);
+        { model, max_tokens: maxTokens, reasoning: { effort }, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] }, Math.min(ms, left));
       if (!r.ok) continue;
       const j = await r.json(), t = j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
       if (t) { last = last || { text: t, model }; if (!accept || accept(t)) return { text: t, model }; }
