@@ -16,6 +16,17 @@ exports.limited = (req) => {
   return recent.length > 15;
 };
 
+// Removes leaked reasoning: <think> blocks and gpt-oss "harmony" channel markers
+exports.clean = (t) => {
+  t = String(t || '').replace(/<think>[\s\S]*?<\/think>/g, '');
+  const f = t.lastIndexOf('<|channel|>final<|message|>');
+  if (f >= 0) t = t.slice(f + 27);
+  const a = t.indexOf('<|');
+  return (a >= 0 ? t.slice(0, a) : t).trim();
+};
+
+exports.validJSON = (t) => { try { exports.parseJSON(exports.clean(t)); return true; } catch (e) { return false; } };
+
 exports.parseJSON = (t) => {
   const a = t.indexOf('{'), b = t.lastIndexOf('}');
   if (a < 0 || b < a) throw new Error('no json');
@@ -29,14 +40,15 @@ async function post(url, headers, body, ms) {
 }
 
 // Tries each free model in order, then Anthropic if a key is set. Returns { text, model }.
-exports.callLLM = async ({ system, user, models, maxTokens = 900, ms = 12000 }) => {
+exports.callLLM = async ({ system, user, models, maxTokens = 900, ms = 12000, effort = 'low', accept }) => {
+  let last = null; // best broken answer, used only if no model gives a clean one
   if (OR) for (const model of models) {
     try {
       const r = await post('https://openrouter.ai/api/v1/chat/completions', { authorization: 'Bearer ' + OR, 'x-title': 'Solo Leveling System' },
-        { model, max_tokens: maxTokens, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] }, ms);
+        { model, max_tokens: maxTokens, reasoning: { effort }, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] }, ms);
       if (!r.ok) continue;
       const j = await r.json(), t = j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
-      if (t && t.includes('{')) return { text: t, model };
+      if (t) { last = last || { text: t, model }; if (!accept || accept(t)) return { text: t, model }; }
     } catch (e) { /* try next model */ }
   }
   if (AN) {
@@ -45,5 +57,6 @@ exports.callLLM = async ({ system, user, models, maxTokens = 900, ms = 12000 }) 
       { model, max_tokens: maxTokens, system, messages: [{ role: 'user', content: user }] }, ms);
     if (r.ok) { const d = await r.json(); return { text: (d.content || []).map(c => c.text || '').join(''), model }; }
   }
+  if (last) return last;
   throw new Error('no provider available');
 };
